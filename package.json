@@ -1,0 +1,26 @@
+{
+  "name": "typescript-graphql",
+  "scripts": {
+    "dev": "ts-node-dev --no-notify --respawn --transpile-only src/server"
+  },
+  "prettier": {
+    "semi": false,
+    "singleQuote": true,
+    "trailingComma": "all"
+  },
+  "dependencies": {
+    "@prisma/client": "5.9.1",
+    "bcryptjs": "^2.4.3",
+    "graphql": "16.8.1",
+    "graphql-scalars": "1.22.4",
+    "graphql-yoga": "5.1.1",
+    "jsonwebtoken": "^9.0.2"
+  },
+  "devDependencies": {
+    "@types/node": "20.11.19",
+    "prisma": "5.9.1",
+    "ts-node": "10.9.2",
+    "ts-node-dev": "2.0.0",
+    "typescript": "5.3.3"
+  }
+}
