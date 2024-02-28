@@ -1,88 +1,12 @@
-import { createSchema } from 'graphql-yoga'
+import { Repeater, pipe, map } from 'graphql-yoga'
 import { GraphQLError } from 'graphql'
 import { Context } from './context'
 import { hash, compare } from 'bcryptjs'
 import { sign } from 'jsonwebtoken'
-import { Prisma } from '@prisma/client'
 import { APP_SECRET, getUserId } from './auth'
 import { pubSub } from './pubsub'
 
-export const typeDefs = `
-  type Mutation {
-    signupUser(data: UserCreateInput!): User!
-    loginUser(data: LoginUserInput!): AuthPayload!
-    createChat(data: CreateChatInput!): Chat
-    sendMessage(data: sendMessageInput!): Message!
-  }
 
-  type Query {
-    allUsers: [User!]!
-    allChats: [Chat]
-    Chat(chatId: Int!): Chat!
-    allMessages: [Message]
-  }
-
-  type Subscription {
-    countdown(from: Int!): Int!
-    userUpdate(requestedUserId: Int!): userUpdatePayload!
-  }
-
-  enum SortOrder {
-    asc
-    desc
-  }
-
-  type User {
-    username: String!
-    id: Int!
-  }
-
-  type Chat{
-    id: Int!
-    users: [User!]
-    messages: [Message]
-  }
-
-  type Message {
-    id: Int!
-    user: User
-    body: String
-    timestamp: DateTime!
-    chat: Chat
-
-  }
-
-  type AuthPayload {
-    token: String!
-    user: User!
-  }
-  
-  type userUpdatePayload{
-    message: Message
-    chat: Chat
-  }
-
-  input UserCreateInput {
-    username: String!
-    password: String!
-  }
-
-  input LoginUserInput{
-    username: String!
-    password: String!
-  }
-
-  input CreateChatInput{
-    targetUsernames: [String!]!
-  }
-  
-  input sendMessageInput{
-    chatId: Int!
-    body: String!
-  }
-
-  scalar DateTime
-`
 
 export const resolvers = {
   Query: {
@@ -110,7 +34,10 @@ export const resolvers = {
             }
           },
           users:true
-        })
+        }),
+        orderBy:{
+          lastUpdate:"desc"
+        }
       })
 
     },
@@ -229,12 +156,15 @@ export const resolvers = {
         data: {
           users: {
             connect: connectedUsers
-          }
+          },
+          lastUpdate: new Date()
         },
       });
       //publish to all connectedusers
       connectedUsers.forEach((user)=>{
-        pubSub.publish('newChat',user.id,{chat:createdChat});
+        pubSub.publish('newChat',user.id,{chat: createdChat});
+        console.log("e")
+        console.log(user.id)  
       })
       return createdChat;
 
@@ -271,7 +201,16 @@ export const resolvers = {
           chatId: args.data.chatId,
           body: args.data.body
         }
-      })
+      });
+      //update chat last updated time
+      await context.prisma.chat.update({
+        where:{
+          id: args.data.chatId
+        },
+        data:{
+          lastUpdate: new Date()
+        }
+      });
       //find users who are in chat
       const usersInChat = await context.prisma.chat.findUnique({
         where:{
@@ -280,7 +219,7 @@ export const resolvers = {
         include:{
           users:true
         }
-      })
+      });
       if(usersInChat?.users){
         usersInChat.users.forEach((user)=>{
           pubSub.publish('newMessage',user.id,{ message: 
@@ -318,7 +257,13 @@ Subscription: {
       if (requestedUserId!=userId){
         throw new GraphQLError(`You cannot request for another user's updates!`)
       }
-      return context.pubSub.subscribe('newChat',userId),context.pubSub.subscribe('newMessage',userId);
+      return pipe(
+            Repeater.merge([
+            context.pubSub.subscribe('newChat',userId),
+            context.pubSub.subscribe('newMessage',userId)
+          ])
+        )
+      
     },
     resolve: payload => payload
   }
@@ -351,7 +296,3 @@ interface sendMessageInput{
 }
 
 
-export const schema = createSchema({
-  typeDefs,
-  resolvers,
-})

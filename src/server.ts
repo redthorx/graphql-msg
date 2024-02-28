@@ -1,13 +1,23 @@
-import { createYoga } from 'graphql-yoga'
+import { createSchema, createYoga } from 'graphql-yoga'
 import { createServer } from 'node:http'
 import { Context, createContext } from './context'
-import { schema } from './schema'
+import { resolvers } from './resolvers'
+import { readFileSync } from 'node:fs'
+
+export const typeDefs =  readFileSync('src/schema.graphql', 'utf8')
+
+const schema = createSchema({
+  typeDefs,
+  resolvers,
+})
 
 const yoga = createYoga({
   graphqlEndpoint: '/',
   schema,
   context:createContext,
 })
+
+
 
 const server = createServer(yoga)
 

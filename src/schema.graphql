@@ -1,0 +1,76 @@
+ type Mutation {
+    signupUser(data: UserCreateInput!): User!
+    loginUser(data: LoginUserInput!): AuthPayload!
+    createChat(data: CreateChatInput!): Chat
+    sendMessage(data: sendMessageInput!): Message!
+  }
+
+  type Query {
+    allUsers: [User!]!
+    allChats: [Chat]
+    Chat(chatId: Int!): Chat!
+    allMessages: [Message]
+  }
+
+  type Subscription {
+    countdown(from: Int!): Int!
+    userUpdate(requestedUserId: Int!): userUpdatePayload!
+  }
+
+  enum SortOrder {
+    asc
+    desc
+  }
+
+  type User {
+    username: String!
+    id: Int!
+  }
+
+  type Chat{
+    id: Int!
+    users: [User!]
+    messages: [Message]
+    lastUpdate: DateTime!
+    createdAt: DateTime!
+  }
+
+  type Message {
+    id: Int!
+    user: User
+    body: String
+    timestamp: DateTime!
+    chat: Chat
+
+  }
+
+  type AuthPayload {
+    token: String!
+    user: User!
+  }
+  
+  type userUpdatePayload{
+    message: Message
+    chat: Chat
+  }
+
+  input UserCreateInput {
+    username: String!
+    password: String!
+  }
+
+  input LoginUserInput{
+    username: String!
+    password: String!
+  }
+
+  input CreateChatInput{
+    targetUsernames: [String!]!
+  }
+  
+  input sendMessageInput{
+    chatId: Int!
+    body: String!
+  }
+
+  scalar DateTime
