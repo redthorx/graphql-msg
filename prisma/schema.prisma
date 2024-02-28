@@ -19,6 +19,8 @@ model Chat {
   id       Int       @id @default(autoincrement())
   messages Message[]
   users    User[]    @relation("ChatToUser")
+  createdAt DateTime @default(now())
+  lastUpdate DateTime @updatedAt
 }
 
 model Message {
