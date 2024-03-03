@@ -74,7 +74,10 @@ export const resolvers = {
         include:{
           messages:{
             include:{
-              user:true
+              user:true,
+            },
+            orderBy:{
+              id:'desc'
             }
           },
           users:true
