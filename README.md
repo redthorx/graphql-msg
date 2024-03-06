@@ -9,6 +9,8 @@ to use:
 npm i
 ```
 
+## Change DB configuration in schema.prisma from 'mssql to sqlite' by uncommenting lines in schema.prisma
+
 ## run DB migrations
 
 ```

@@ -5,7 +5,7 @@ import { resolvers } from './resolvers'
 import { readFileSync } from 'node:fs'
 
 export const typeDefs =  readFileSync('src/schema.graphql', 'utf8')
-
+const port = process.env.PORT || 5000
 const schema = createSchema({
   typeDefs,
   resolvers,
@@ -21,8 +21,8 @@ const yoga = createYoga({
 
 const server = createServer(yoga)
 
-server.listen(5000, () => {
+server.listen(port, () => {
   console.log(`
-  🚀 Server ready at: http://localhost:5000
+  🚀 Server ready at: http://localhost:${port}
   ⭐️ See sample queries: http://pris.ly/e/ts/graphql-sdl-first#using-the-graphql-api`)
 })
