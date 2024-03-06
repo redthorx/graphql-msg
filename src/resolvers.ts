@@ -93,7 +93,7 @@ export const resolvers = {
       context: Context,
     ) => {
       if (args.data.username.length <1 || args.data.password.length <1 || !args.data.username.match("^[a-zA-Z0-9]+$")){
-        throw new GraphQLError(`Please enter a valid username and password!`)
+        throw new GraphQLError(`Please enter a valid username and password!`);
       }
       const hashedPassword = await hash(args.data.password, 10)
       return context.prisma.user.create({
