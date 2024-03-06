@@ -3,8 +3,14 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
+  
+  //use this instead if you are doing localhost
+  //provider = "sqlite"
+  //url = "file:./dev.db"
+
+  provider = "sqlserver"
   url      = env("DATABASE_URL")
+  shadowDatabaseUrl = env("SHADOW_DATABASE_URL")"
 }
 
 model User {
