@@ -50,7 +50,6 @@ export const resolvers = {
       if(!userId){
         throw new GraphQLError(`You must be logged in!`)
       }
-      console.log(chatId);
       const isUserInChat = await context.prisma.user.findUnique({
         where:{
           id:userId
@@ -168,8 +167,6 @@ export const resolvers = {
       //publish to all connectedusers
       connectedUsers.forEach((user)=>{
         pubSub.publish('newChat',user.id,{chat: createdChat});
-        console.log("e")
-        console.log(user.id)  
       })
       return createdChat;
 
@@ -205,6 +202,10 @@ export const resolvers = {
           userId:userId,
           chatId: args.data.chatId,
           body: args.data.body
+        },
+        include:{
+          user:true,
+          chat:true
         }
       });
       //update chat last updated time
@@ -257,8 +258,6 @@ Subscription: {
       if(!userId){
         throw new GraphQLError(`You must be logged in!`)
       }
-      console.log(requestedUserId);
-      console.log(userId);
       if (requestedUserId!=userId){
         throw new GraphQLError(`You cannot request for another user's updates!`)
       }
