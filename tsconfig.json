@@ -2,7 +2,9 @@
   "compilerOptions": {
     "outDir": "dist",
     "rootDir": "src",
-    "lib": ["esnext"],
+    "target": "ES6",
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
     "strict": true, 
     "noImplicitAny": false
   },

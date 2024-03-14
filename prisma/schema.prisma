@@ -3,12 +3,7 @@ generator client {
 }
 
 datasource db {
-  
-  //use this instead if you are doing localhost
-  //provider = "sqlite"
-  //url = "file:./dev.db"
-
-  provider = "sqlserver"
+  provider = env("DB_PROVIDER")
   url      = env("DATABASE_URL")
   shadowDatabaseUrl = env("SHADOW_DATABASE_URL")
 }
@@ -33,7 +28,7 @@ model Message {
   id        Int      @id @default(autoincrement())
   userId    Int
   chatId    Int
-  body      String
+  body      String  /// @encrypted
   timestamp DateTime @default(now())
   chat      Chat     @relation(fields: [chatId], references: [id])
   user      User     @relation(fields: [userId], references: [id])
