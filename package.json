@@ -3,7 +3,8 @@
   "scripts": {
     "dev": "ts-node-dev --no-notify --respawn --transpile-only src/server",
     "prod": "NODE_ENV=production npm rebuild && ts-node src/server",
-    "start": "NODE_ENV=production ts-node src/server"
+    "start": "NODE_ENV=production ts-node src/server",
+    "test": "jest"
   },
   "prettier": {
     "semi": false,
@@ -18,9 +19,14 @@
     "graphql-scalars": "1.22.4",
     "graphql-yoga": "5.1.1",
     "jsonwebtoken": "^9.0.2",
+    "prisma-field-encryption": "^1.5.2",
     "ts-node": "10.9.2"
   },
   "devDependencies": {
+    "@babel/preset-env": "^7.24.0",
+    "@babel/preset-typescript": "^7.23.3",
+    "@types/jest": "^29.5.12",
+    "jest-mock-extended": "^2.0.4",
     "prisma": "5.9.1",
     "ts-node-dev": "2.0.0"
   }
