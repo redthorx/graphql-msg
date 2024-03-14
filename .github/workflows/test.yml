@@ -4,6 +4,11 @@ on:
     branches:
       - main
   workflow_dispatch:
+env:
+  DB_PROVIDER: "sqlite"
+  DATABASE_URL: "./dev.db"
+  SHADOW_DATABASE_URL: "./shadow.db"
+
 
 jobs:
   build:
