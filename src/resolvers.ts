@@ -17,7 +17,7 @@ export const resolvers = {
     allChats: async (_parent, _args, context: Context) =>{
       const userId = getUserId(context)
       if(!userId){
-        throw new GraphQLError(`You must be logged in!`)
+        throw new GraphQLError(`Invalid Authorization! Check Headers!`)
       }
       return await context.prisma.user.findUnique({
         where: {
@@ -49,7 +49,7 @@ export const resolvers = {
     ) => {
       const userId = getUserId(context)
       if(!userId){
-        throw new GraphQLError(`You must be logged in!`)
+        throw new GraphQLError(`Invalid Authorization! Check Headers!`)
       }
       const isUserInChat = await context.prisma.user.findUnique({
         where:{
@@ -135,7 +135,7 @@ export const resolvers = {
     ) => {
       const _self_user = getUserId(context);
       if(!_self_user){
-        throw new GraphQLError(`You must be logged in!`)
+        throw new GraphQLError(`Invalid Authorization! Check Headers!`)
       }
       //check if all users in list is valid
       const target_users = await Promise.all(
@@ -179,7 +179,7 @@ export const resolvers = {
     ) =>{
       const userId = getUserId(context)
       if(!userId){
-        throw new GraphQLError(`You must be logged in!`)
+        throw new GraphQLError(`Invalid Authorization! Check Headers!`)
       }
       //find out if chat is valid for users
       const isUserInChat = await context.prisma.user.findUnique({
@@ -215,7 +215,7 @@ export const resolvers = {
           id: args.data.chatId
         },
         data:{
-          lastUpdate: new Date()
+          lastUpdate: new Date(),
         }
       });
       //find users who are in chat
@@ -264,7 +264,7 @@ Subscription: {
         }
       })();
       if (!userId){
-        throw new GraphQLError(`You must be logged in!`)
+        throw new GraphQLError(`Unable to validate user!`)
       }
       return pipe(
             Repeater.merge([

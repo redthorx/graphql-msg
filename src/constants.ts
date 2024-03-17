@@ -7,3 +7,5 @@ export const JWT_EXPIRY_SECONDS = (()=>{
         return Number(process.env.JWT_EXPIRY_SECONDS);
     }
 })();
+export const ORIGIN_SERVER = process.env.ORIGIN_SERVER  
+export const CSRF_HEADER_NAME = process.env.CSRF_HEADER_NAME || 'x-csrf'
