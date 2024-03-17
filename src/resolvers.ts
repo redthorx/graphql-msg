@@ -3,7 +3,8 @@ import { GraphQLError } from 'graphql'
 import { Context } from './context'
 import { hash, compare } from 'bcryptjs'
 import { sign } from 'jsonwebtoken'
-import { APP_SECRET, getUserId } from './auth'
+import {  getUserId, getUserIdSubscription } from './auth'
+import { APP_SECRET, JWT_EXPIRY_SECONDS } from './constants'
 import { pubSub } from './pubsub'
 
 
@@ -121,7 +122,7 @@ export const resolvers = {
         throw new GraphQLError('Invalid Login!')
       }
       return {
-        token: sign({ userId: user.id }, APP_SECRET),
+        token: sign({ userId: user.id, exp:Math.floor(Date.now()/1000)+JWT_EXPIRY_SECONDS }, APP_SECRET),
         user,
       }
 
@@ -251,15 +252,19 @@ Subscription: {
   userUpdate:{
     subscribe: (
       _parent,
-      { requestedUserId },
+      { Token },
       context: Context,
     ) =>{
-      const userId = getUserId(context)
-      if(!userId){
+      const userId = (()=>{
+      try{
+          return getUserIdSubscription(Token);
+        }
+        catch(error){
+          throw new GraphQLError(`Invalid Token!`)
+        }
+      })();
+      if (!userId){
         throw new GraphQLError(`You must be logged in!`)
-      }
-      if (requestedUserId!=userId){
-        throw new GraphQLError(`You cannot request for another user's updates!`)
       }
       return pipe(
             Repeater.merge([

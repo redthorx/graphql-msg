@@ -14,7 +14,7 @@
 
   type Subscription {
     countdown(from: Int!): Int!
-    userUpdate(requestedUserId: Int!): userUpdatePayload!
+    userUpdate(Token: String!): userUpdatePayload!
   }
 
   enum SortOrder {
