@@ -1,8 +1,7 @@
 import { verify } from 'jsonwebtoken'
 import { Context } from './context'
+import { APP_SECRET } from './constants'
 
-
-export const APP_SECRET = process.env.APP_SECRET 
 
 
 interface Token {
@@ -13,7 +12,20 @@ export function getUserId(context: Context) {
   const authHeader = context.req.headers.authorization
   if (authHeader) {
     const token = authHeader.replace('Bearer ', '')
-    const verifiedToken = verify(token, APP_SECRET) as Token
+    const verifiedToken = (()=>{
+      try{
+        return verify(token, APP_SECRET) as Token
+      }
+      catch{
+        
+      }
+      })();
     return verifiedToken && Number(verifiedToken.userId)
+  }
+}
+export function getUserIdSubscription(unverifiedToken: String) {
+  if (unverifiedToken){
+  const verifiedToken = verify(unverifiedToken, APP_SECRET) as Token
+  return verifiedToken && Number(verifiedToken.userId)
   }
 }
