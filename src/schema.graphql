@@ -33,6 +33,7 @@
     messages: [Message]
     lastUpdate: DateTime!
     createdAt: DateTime!
+    lastmessageStub: String
   }
 
   type Message {

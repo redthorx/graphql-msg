@@ -17,7 +17,7 @@ export const resolvers = {
     allChats: async (_parent, _args, context: Context) =>{
       const userId = getUserId(context)
       if(!userId){
-        throw new GraphQLError(`Invalid Authorization! Check Headers!`)
+        throw new GraphQLError(`Invalid Authorization! Check Headers! (did you miss out x-csrf?)`)
       }
       return await context.prisma.user.findUnique({
         where: {
@@ -49,7 +49,7 @@ export const resolvers = {
     ) => {
       const userId = getUserId(context)
       if(!userId){
-        throw new GraphQLError(`Invalid Authorization! Check Headers!`)
+        throw new GraphQLError(`Invalid Authorization! Check Headers! (did you miss out x-csrf?)`)
       }
       const isUserInChat = await context.prisma.user.findUnique({
         where:{
@@ -135,7 +135,7 @@ export const resolvers = {
     ) => {
       const _self_user = getUserId(context);
       if(!_self_user){
-        throw new GraphQLError(`Invalid Authorization! Check Headers!`)
+        throw new GraphQLError(`Invalid Authorization! Check Headers! (did you miss out x-csrf?)`)
       }
       //check if all users in list is valid
       const target_users = await Promise.all(
@@ -179,7 +179,7 @@ export const resolvers = {
     ) =>{
       const userId = getUserId(context)
       if(!userId){
-        throw new GraphQLError(`Invalid Authorization! Check Headers!`)
+        throw new GraphQLError(`Invalid Authorization! Check Headers! (did you miss out x-csrf?)`)
       }
       //find out if chat is valid for users
       const isUserInChat = await context.prisma.user.findUnique({
@@ -209,6 +209,7 @@ export const resolvers = {
           chat:true
         }
       });
+      console.log(args.data.body.substring(0,10))
       //update chat last updated time
       await context.prisma.chat.update({
         where:{
@@ -216,6 +217,7 @@ export const resolvers = {
         },
         data:{
           lastUpdate: new Date(),
+          lastmessageStub: args.data.body.substring(0,10) // store substring is sufficient
         }
       });
       //find users who are in chat
