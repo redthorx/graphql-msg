@@ -3,8 +3,8 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlserver"
-  url      = env("DATABASE_URL")
+  provider          = "sqlserver"
+  url               = env("DATABASE_URL")
   shadowDatabaseUrl = env("SHADOW_DATABASE_URL")
 }
 
@@ -17,18 +17,19 @@ model User {
 }
 
 model Chat {
-  id       Int       @id @default(autoincrement())
-  messages Message[]
-  users    User[]    @relation("ChatToUser")
-  createdAt DateTime @default(now())
-  lastUpdate DateTime @updatedAt
+  id         Int       @id @default(autoincrement())
+  createdAt  DateTime  @default(now())
+  lastUpdate DateTime  @updatedAt
+  messages   Message[]
+  users      User[]    @relation("ChatToUser")
+  lastmessageStub String?    
 }
 
 model Message {
   id        Int      @id @default(autoincrement())
   userId    Int
   chatId    Int
-  body      String  /// @encrypted
+  body      String   /// @encrypted
   timestamp DateTime @default(now())
   chat      Chat     @relation(fields: [chatId], references: [id])
   user      User     @relation(fields: [userId], references: [id])

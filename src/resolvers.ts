@@ -7,23 +7,71 @@ import {  getUserId, getUserIdSubscription } from './auth'
 import { APP_SECRET, JWT_EXPIRY_SECONDS } from './constants'
 import { pubSub } from './pubsub'
 
-
+const applyTakeConstraints = (params: { min: number; max: number; value: number }) => {
+  if (params.value < params.min || params.value > params.max) {
+    throw new GraphQLError(
+      `'take' argument value '${params.value}' is outside the valid range of '${params.min}' to '${params.max}'.`
+    )
+  }
+  return params.value
+}
+ 
 
 export const resolvers = {
   Query: {
-    allUsers: (_parent, _args, context: Context) => {
-      return context.prisma.user.findMany()
+    allUsers: (_parent, args: { data: allUsersInput } | undefined, context: Context) => {
+      if(!args){
+        //backwards compatibility
+        args = {
+          data:{
+            searchString: undefined,
+            skip: undefined,
+            take: undefined
+
+          }
+        }
+      }
+      const where = (()=>{
+        if(typeof args?.data?.searchString !== 'undefined'){
+          return {
+            username: {
+              contains: args.data.searchString
+            }
+          }
+        }
+        else{
+          return {}
+        }
+      })();
+      const take = applyTakeConstraints({
+        min:1,
+        max:50,
+        value: args?.data?.take?? 30
+      })
+
+      return context.prisma.user.findMany({
+        where,
+        skip:args.data?.skip,
+        take
+      })
     },
-    allChats: async (_parent, _args, context: Context) =>{
+    allChats: async (_parent, args: {data: allChatsInput}, context: Context) =>{
       const userId = getUserId(context)
       if(!userId){
-        throw new GraphQLError(`You must be logged in!`)
+        throw new GraphQLError(`Invalid Authorization! Check Headers! (did you miss out x-csrf?)`)
       }
+      const take = applyTakeConstraints({
+        min:1,
+        max:50,
+        value: args?.data?.take?? 30
+      })
       return await context.prisma.user.findUnique({
         where: {
           id: userId
         }
       }).chats({
+        skip:args.data?.skip,
+        take,
         include:({
           messages:{
             take:5,
@@ -44,12 +92,12 @@ export const resolvers = {
     },
     Chat: async (
       _parent, 
-      { chatId },
+      args: {data: ChatInput} ,
       context:Context,
     ) => {
       const userId = getUserId(context)
       if(!userId){
-        throw new GraphQLError(`You must be logged in!`)
+        throw new GraphQLError(`Invalid Authorization! Check Headers! (did you miss out x-csrf?)`)
       }
       const isUserInChat = await context.prisma.user.findUnique({
         where:{
@@ -58,7 +106,7 @@ export const resolvers = {
         include:{
           chats:{
             where:{
-              id: chatId
+              id: args.data.chatId
             }
           }
         }
@@ -67,9 +115,14 @@ export const resolvers = {
       if (!isUserInChat?.chats.length){
         throw new GraphQLError(`You do not belong in the chat!`)
       }
+      const take = applyTakeConstraints({
+        min:1,
+        max:50,
+        value: args?.data?.take?? 30
+      })
       return await context.prisma.chat.findUnique({
         where:{
-          id: chatId
+          id: args.data.chatId
         },
         include:{
           messages:{
@@ -78,7 +131,9 @@ export const resolvers = {
             },
             orderBy:{
               id:'desc'
-            }
+            },
+            skip: args.data.skip,
+            take
           },
           users:true
         }
@@ -94,6 +149,15 @@ export const resolvers = {
     ) => {
       if (args.data.username.length <1 || args.data.password.length <1 || !args.data.username.match("^[a-zA-Z0-9]+$")){
         throw new GraphQLError(`Please enter a valid username and password!`);
+      }
+      const userExists = await context.prisma.user.findUnique({
+        where:{
+          username: args.data.username
+        }
+      }
+      )
+      if(userExists){
+        throw new GraphQLError(`User already Exists!`);
       }
       const hashedPassword = await hash(args.data.password, 10)
       return context.prisma.user.create({
@@ -135,7 +199,7 @@ export const resolvers = {
     ) => {
       const _self_user = getUserId(context);
       if(!_self_user){
-        throw new GraphQLError(`You must be logged in!`)
+        throw new GraphQLError(`Invalid Authorization! Check Headers! (did you miss out x-csrf?)`)
       }
       //check if all users in list is valid
       const target_users = await Promise.all(
@@ -179,7 +243,7 @@ export const resolvers = {
     ) =>{
       const userId = getUserId(context)
       if(!userId){
-        throw new GraphQLError(`You must be logged in!`)
+        throw new GraphQLError(`Invalid Authorization! Check Headers! (did you miss out x-csrf?)`)
       }
       //find out if chat is valid for users
       const isUserInChat = await context.prisma.user.findUnique({
@@ -209,13 +273,15 @@ export const resolvers = {
           chat:true
         }
       });
+      console.log(args.data.body.substring(0,10))
       //update chat last updated time
       await context.prisma.chat.update({
         where:{
           id: args.data.chatId
         },
         data:{
-          lastUpdate: new Date()
+          lastUpdate: new Date(),
+          lastmessageStub: args.data.body.substring(0,10) // store substring is sufficient
         }
       });
       //find users who are in chat
@@ -264,7 +330,7 @@ Subscription: {
         }
       })();
       if (!userId){
-        throw new GraphQLError(`You must be logged in!`)
+        throw new GraphQLError(`Unable to validate user!`)
       }
       return pipe(
             Repeater.merge([
@@ -304,4 +370,18 @@ interface sendMessageInput{
 
 }
 
+interface allUsersInput{
+  searchString: string | undefined; 
+  skip: number| undefined;
+  take: number| undefined;
+}
 
+interface allChatsInput{
+  skip: number| undefined;
+  take: number| undefined;
+}
+interface ChatInput{
+  chatId: number;
+  skip: number| undefined;
+  take: number| undefined;
+}

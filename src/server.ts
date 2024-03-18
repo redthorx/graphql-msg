@@ -5,8 +5,28 @@ import { useServer } from 'graphql-ws/lib/use/ws'
 import { Context, createContext } from './context'
 import { resolvers } from './resolvers'
 import { readFileSync } from 'node:fs'
+import { ORIGIN_SERVER, CSRF_HEADER_NAME } from './constants'
 
 export const typeDefs =  readFileSync('src/schema.graphql', 'utf8')
+
+function setCors(){
+  if(!ORIGIN_SERVER){
+    console.log('CORS has not been set, defaulting to same-origin. If you see this and are having CORS issues, set the ORIGIN_SERVER environment variable to your origin server, or * for catch-all')
+    return false
+  }
+  else{
+    if(ORIGIN_SERVER === '*'){
+      console.warn("Warning, your cors is set to '*'. Set to your origin server for better security")
+    }
+    return{
+      origin: ORIGIN_SERVER,
+      credentials: true,
+      allowedHeaders: [CSRF_HEADER_NAME],
+      methods: ['OPTIONS','POST']
+    }
+  }
+}
+const corsOptions = setCors()
 const port = process.env.PORT || 5000
 const schema = createSchema({
   typeDefs,
@@ -20,6 +40,7 @@ const yoga = createYoga({
   graphqlEndpoint: '/',
   schema,
   context:createContext,
+  cors: corsOptions
 })
 
 

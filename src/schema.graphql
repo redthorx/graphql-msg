@@ -6,9 +6,9 @@
   }
 
   type Query {
-    allUsers: [User!]!
-    allChats: [Chat]
-    Chat(chatId: Int!): Chat!
+    allUsers(data: allUsersInput): [User!]!
+    allChats(data: allChatsInput): [Chat]
+    Chat(data: ChatInput!): Chat!
     allMessages: [Message]
   }
 
@@ -33,6 +33,7 @@
     messages: [Message]
     lastUpdate: DateTime!
     createdAt: DateTime!
+    lastmessageStub: String
   }
 
   type Message {
@@ -73,4 +74,18 @@
     body: String!
   }
 
+  input allUsersInput{
+    searchString: String
+    skip: Int
+    take: Int
+  }
+  input allChatsInput{
+    skip: Int
+    take: Int
+  }
+  input ChatInput{
+    chatId: Int!
+    skip: Int
+    take: Int
+  }
   scalar DateTime

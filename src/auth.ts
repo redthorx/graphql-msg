@@ -1,6 +1,6 @@
 import { verify } from 'jsonwebtoken'
 import { Context } from './context'
-import { APP_SECRET } from './constants'
+import { APP_SECRET,CSRF_HEADER_NAME } from './constants'
 
 
 
@@ -9,7 +9,10 @@ interface Token {
 }
 
 export function getUserId(context: Context) {
-  const authHeader = context.req.headers.authorization
+  const authHeader = context.req.headers.authorization; 
+  if(!context.req.headers[CSRF_HEADER_NAME]){
+    return null;
+  }
   if (authHeader) {
     const token = authHeader.replace('Bearer ', '')
     const verifiedToken = (()=>{
