@@ -1,4 +1,5 @@
 import { YogaServer, createSchema, createYoga } from 'graphql-yoga'
+import { useCSRFPrevention } from '@graphql-yoga/plugin-csrf-prevention'
 import { createServer } from 'node:http'
 import ws from 'ws'
 import { useServer } from 'graphql-ws/lib/use/ws'
@@ -39,6 +40,11 @@ const yoga = createYoga({
   },
   graphqlEndpoint: '/',
   schema,
+  plugins: [
+    useCSRFPrevention({
+      requestHeaders: ['x-csrf'] // default
+    })
+  ],
   context:createContext,
   cors: corsOptions
 })
