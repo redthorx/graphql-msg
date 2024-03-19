@@ -21,7 +21,7 @@ function setCors(){
     return{
       origin: ORIGIN_SERVER,
       credentials: true,
-      allowedHeaders: [CSRF_HEADER_NAME],
+      allowedHeaders: [CSRF_HEADER_NAME, 'content-type'],
       methods: ['OPTIONS','POST']
     }
   }
