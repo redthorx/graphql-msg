@@ -228,6 +228,10 @@ export const resolvers = {
           },
           lastUpdate: new Date()
         },
+        include:{
+          users: true,
+          messages: true
+        },
       });
       //publish to all connectedusers
       connectedUsers.forEach((user)=>{
@@ -273,7 +277,6 @@ export const resolvers = {
           chat:true
         }
       });
-      console.log(args.data.body.substring(0,10))
       //update chat last updated time
       await context.prisma.chat.update({
         where:{
