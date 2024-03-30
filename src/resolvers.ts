@@ -57,7 +57,7 @@ export const resolvers = {
       })
     },
     allChats: async (_parent, args: {data: allChatsInput}, context: Context) =>{
-      const userId = getUserId(context)
+      const userId = getUserId(context);
       if(!userId){
         throw new GraphQLError(`Invalid Authorization! Check Headers! (did you miss out x-csrf?)`)
       }
@@ -71,6 +71,9 @@ export const resolvers = {
           id: userId
         }
       }).chats({
+        where:{
+          isDisabled: args.data?.disabled || false
+        },
         skip:args.data?.skip,
         take,
         include:({
@@ -290,6 +293,10 @@ export const resolvers = {
           },
           lastUpdate: new Date()
         },
+        include:{
+          users: true,
+          messages: true
+        },
       });
       //publish to all connectedusers
       connectedUsers.forEach((user)=>{
@@ -323,6 +330,9 @@ export const resolvers = {
       //user is not in chat
       if (!isUserInChat?.chats.length){
         throw new GraphQLError(`You do not belong in the chat!`)
+      }
+      if(isUserInChat.chats[0].isDisabled){
+        throw new GraphQLError(`Chat is Disabled!`)
       }
       const createdMessage = await context.prisma.message.create({
         data:{
@@ -370,6 +380,45 @@ export const resolvers = {
       }
       return createdMessage;
 
+    },
+    setChatStatus: async (
+      __parent,
+      args: {data: setChatStatusInput },
+      context: Context
+
+    ) =>{
+      const userId = getUserId(context)
+      if(!userId){
+        throw new GraphQLError(`Invalid Authorization! Check Headers! (did you miss out x-csrf?)`)
+      }
+      //find out if chat is valid for users
+      const isUserInChat = await context.prisma.user.findUnique({
+        where:{
+          id:userId
+        },
+        include:{
+          chats:{
+            where:{
+              id: args.data.chatId
+            }
+          }
+        }
+      })
+      //user is not in chat
+      if (!isUserInChat?.chats.length){
+        throw new GraphQLError(`You do not belong in the chat!`)
+      }
+      return context.prisma.chat.update({
+        where:{
+          id:args.data.chatId
+        },
+        data:{
+          isDisabled:args.data.disabled
+        },
+        include:{
+          users: true
+        }
+      })
     }
 
 
@@ -444,9 +493,15 @@ interface allUsersInput{
   take: number| undefined;
 }
 
+interface setChatStatusInput{
+  chatId: number;
+  disabled: boolean;
+}
+
 interface allChatsInput{
   skip: number| undefined;
   take: number| undefined;
+  disabled: boolean | undefined;
 }
 interface ChatInput{
   chatId: number;

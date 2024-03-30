@@ -4,6 +4,7 @@
     loginGoogleUser(GoogleToken: String!): GoogleAuthPayload!
     createChat(data: CreateChatInput!): Chat
     sendMessage(data: sendMessageInput!): Message!
+    setChatStatus(data: setChatStatusInput!): Chat
   }
 
   type Query {
@@ -35,6 +36,7 @@
     lastUpdate: DateTime!
     createdAt: DateTime!
     lastmessageStub: String
+    isDisabled: Boolean
   }
 
   type Message {
@@ -90,6 +92,11 @@
   input allChatsInput{
     skip: Int
     take: Int
+    disabled: Boolean
+  }
+  input setChatStatusInput{
+    chatId: Int!
+    disabled: Boolean!
   }
   input ChatInput{
     chatId: Int!

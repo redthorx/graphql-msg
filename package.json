@@ -12,6 +12,7 @@
     "trailingComma": "all"
   },
   "dependencies": {
+    "@graphql-yoga/plugin-csrf-prevention": "^3.2.0",
     "@prisma/client": "5.9.1",
     "@types/node": "20.11.19",
     "bcryptjs": "^2.4.3",
@@ -19,7 +20,7 @@
     "graphql": "^16.8.1",
     "graphql-scalars": "1.22.4",
     "graphql-ws": "^5.15.0",
-    "graphql-yoga": "5.1.1",
+    "graphql-yoga": "^5.2.0",
     "jsonwebtoken": "^9.0.2",
     "prisma-field-encryption": "^1.5.2",
     "ts-node": "10.9.2",
