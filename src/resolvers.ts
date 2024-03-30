@@ -3,7 +3,8 @@ import { GraphQLError } from 'graphql'
 import { Context } from './context'
 import { hash, compare } from 'bcryptjs'
 import { sign } from 'jsonwebtoken'
-import {  getUserId, getUserIdSubscription } from './auth'
+import { createHash } from 'crypto'
+import {  getUserId, getUserIdSubscription,getGoogleUserId } from './auth'
 import { APP_SECRET, JWT_EXPIRY_SECONDS } from './constants'
 import { pubSub } from './pubsub'
 
@@ -150,8 +151,12 @@ export const resolvers = {
       args: { data: UserCreateInput },
       context: Context,
     ) => {
-      if (args.data.username.length <1 || args.data.password.length <1 || !args.data.username.match("^[a-zA-Z0-9]+$")){
-        throw new GraphQLError(`Please enter a valid username and password!`);
+
+      if (args.data.username.length <1 || !args.data.username.match("^[a-zA-Z0-9]+$")){
+        throw new GraphQLError(`Please enter a valid username!`);
+      }
+      if (!(args.data.GoogleToken || args.data.password)){
+        throw new GraphQLError(`Please enter a ID token or password!`);
       }
       const userExists = await context.prisma.user.findUnique({
         where:{
@@ -162,13 +167,66 @@ export const resolvers = {
       if(userExists){
         throw new GraphQLError(`User already Exists!`);
       }
-      const hashedPassword = await hash(args.data.password, 10)
+      let hashedPassword:string | null = null;
+      let hashedGoogleID:string | null = null;
+      if(args.data.password){
+        hashedPassword = await hash(args.data.password, 10);
+      } 
+      if(args.data.GoogleToken){
+        const googleId = await getGoogleUserId(args.data.GoogleToken);
+        if(googleId === undefined){
+          throw new GraphQLError(`Invalid Google Token!`)
+        }
+        else{
+          hashedGoogleID = createHash('sha256').update(googleId.sub, "binary").digest("base64");
+        const user = await context.prisma.user.findFirstOrThrow({
+            where:{
+              googleIdMD5Hash:hashedGoogleID
+            }
+          }
+          )
+          .catch(()=>{})
+        if(user){
+          throw new GraphQLError(`Google User Exists!`)
+        }
+
+        }
+      }
+      
       return context.prisma.user.create({
         data: {
           username: args.data.username,
-          password_hash: hashedPassword
+          password_hash: hashedPassword,
+          googleIdMD5Hash: hashedGoogleID
         },
       })
+    },
+    loginGoogleUser: async (
+      _parent, 
+      { GoogleToken },
+      context: Context,
+    ) =>{
+      if(!GoogleToken){
+        throw new GraphQLError(`Please enter a token!`);
+      }
+      const hashedGoogleID = createHash('sha256').update(GoogleToken, "binary").digest("base64");
+      const user = await context.prisma.user.findFirstOrThrow({
+            where:{
+              googleIdMD5Hash: hashedGoogleID
+            }
+          }).then((user)=>{return user}).catch((e)=>{})
+      if(!user){
+        return {
+          token:null,
+          user:null,
+          isValidUser:false
+        }
+      }
+      return{
+        token:sign({ userId: user.id, exp:Math.floor(Date.now()/1000)+JWT_EXPIRY_SECONDS }, APP_SECRET),
+        user:user,
+        isValidUser:true,
+      }
     },
     loginUser: async (
       _parent,
@@ -182,6 +240,9 @@ export const resolvers = {
       }
       )
       if(!user){
+        throw new GraphQLError(`Invalid Login!`)
+      }
+      if(!user.password_hash){ // if google signin user, password can be null
         throw new GraphQLError(`Invalid Login!`)
       }
       const passwordValid = await compare(args.data.password, user.password_hash)
@@ -227,6 +288,7 @@ export const resolvers = {
       const createdChat = await context.prisma.chat.create({
         data: {
           users: {
+            //@ts-ignore dumb bug
             connect: connectedUsers
           },
           lastUpdate: new Date()
@@ -284,13 +346,21 @@ export const resolvers = {
         }
       });
       //update chat last updated time
+      const lastmessageStub = ()=>{
+        if(args.data.body.length>10){
+          return args.data.body.substring(0,10) + '...';
+        }
+        else{
+          return args.data.body
+        }
+      }
       await context.prisma.chat.update({
         where:{
           id: args.data.chatId
         },
         data:{
           lastUpdate: new Date(),
-          lastmessageStub: args.data.body.substring(0,10) // store substring is sufficient
+          lastmessageStub: lastmessageStub() // store substring is sufficient
         }
       });
       //find users who are in chat
@@ -364,22 +434,20 @@ Subscription: {
     }
   },
   userUpdate:{
-    subscribe: (
+    subscribe: async (
       _parent,
       { Token },
       context: Context,
-    ) =>{
-      const userId = (()=>{
-      try{
-          return getUserIdSubscription(Token);
+    ) => {
+      const userId = await getUserIdSubscription(Token)
+      .then((userId)=>{
+        if(userId){
+          return userId
         }
-        catch(error){
-          throw new GraphQLError(`Invalid Token!`)
-        }
-      })();
-      if (!userId){
-        throw new GraphQLError(`Unable to validate user!`)
-      }
+        else{
+          throw new GraphQLError(`Unable to validate user!`)
+        }})
+      .catch((e)=>{throw new GraphQLError(`Invalid Token!`)})
       return pipe(
             Repeater.merge([
             context.pubSub.subscribe('newChat',userId),
@@ -400,7 +468,8 @@ enum SortOrder {
 
 interface UserCreateInput {
   username: string;
-  password: string;
+  password: string | undefined;
+  GoogleToken: string | undefined;
 }
 
 interface LoginUserInput{
