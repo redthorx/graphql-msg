@@ -56,7 +56,7 @@
   type GoogleAuthPayload{
     token: String
     user: User
-    IsValidUser: Boolean!
+    isValidUser: Boolean!
   }
   
   type userUpdatePayload{
