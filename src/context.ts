@@ -1,7 +1,8 @@
 import { PrismaClient } from '@prisma/client'
 import { pubSub } from './pubsub'
 import { fieldEncryptionExtension } from 'prisma-field-encryption'
-
+import { CSRF_HEADER_NAME } from './constants';
+import { GraphQLError } from 'graphql';
 class EncryptedPrismaClient extends PrismaClient {
   constructor(){
     super();
@@ -19,6 +20,7 @@ export interface Context {
 }
 
 export function createContext(req: any) {
+  console.log(req.Headers);
   return {
     ...req,
     prisma,

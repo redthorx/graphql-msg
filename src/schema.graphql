@@ -1,6 +1,7 @@
  type Mutation {
     signupUser(data: UserCreateInput!): User!
     loginUser(data: LoginUserInput!): AuthPayload!
+    loginGoogleUser(GoogleToken: String!): GoogleAuthPayload!
     createChat(data: CreateChatInput!): Chat
     sendMessage(data: sendMessageInput!): Message!
   }
@@ -49,6 +50,12 @@
     token: String!
     user: User!
   }
+
+  type GoogleAuthPayload{
+    token: String
+    user: User
+    IsValidUser: Boolean!
+  }
   
   type userUpdatePayload{
     message: Message
@@ -57,7 +64,8 @@
 
   input UserCreateInput {
     username: String!
-    password: String!
+    password: String
+    GoogleToken: String
   }
 
   input LoginUserInput{
