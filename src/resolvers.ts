@@ -209,7 +209,11 @@ export const resolvers = {
       if(!GoogleToken){
         throw new GraphQLError(`Please enter a token!`);
       }
-      const hashedGoogleID = createHash('sha256').update(GoogleToken, "binary").digest("base64");
+      const googleId = await getGoogleUserId(GoogleToken);
+      if(googleId === undefined){
+        throw new GraphQLError(`Invalid Google Token!`)
+      }
+      const hashedGoogleID = createHash('sha256').update(googleId.sub, "binary").digest("base64");
       const user = await context.prisma.user.findFirstOrThrow({
             where:{
               googleIdMD5Hash: hashedGoogleID
