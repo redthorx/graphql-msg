@@ -30,6 +30,7 @@ it('creates user', async () => {
       const user = {
             username: 'bobby',
             password: 'hello',
+            GoogleToken: undefined
           }
       const context: Context = mockCtx;
       const result = await resolvers.Mutation.signupUser(null, {data:user}, context);
