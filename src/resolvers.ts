@@ -152,7 +152,7 @@ export const resolvers = {
       context: Context,
     ) => {
 
-      if (args.data.username.length <1 || !args.data.username.match("^[a-zA-Z0-9]+$")){
+      if (args.data.username.length <1 || !args.data.username.match("^[a-zA-Z0-9@.]+$")){
         throw new GraphQLError(`Please enter a valid username!`);
       }
       if (!(args.data.GoogleToken || args.data.password)){
