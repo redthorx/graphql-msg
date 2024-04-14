@@ -120,9 +120,15 @@ export async function getGoogleUserId(Token:string){
    * Gets the sub of the token, and verifies if the token is valid
    */
   //get the header from the idToken
-  const header = decode(Token,{
+  
+  const header = (()=>{ try{
+    return decode(Token,{
     complete:true
-  }).header;
+  }).header;}
+  catch{
+    throw new GraphQLError(`Unable to decode token!`)
+    }
+  })();
 
   if(header.typ!=='JWT' || header.alg!=='RS256'){
     throw new GraphQLError(`Invalid Token type!`)
